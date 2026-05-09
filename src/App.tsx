@@ -33,8 +33,13 @@ import BaoVeDoAn from "./assets/images/baovedoan.jpg";
 import HocTap from "./assets/images/hoctap.jpg";
 import Avatar from "./assets/images/avatar.jpg";
 import PhongBaoVe from "./assets/images/phongbaove.jpg";
-
-
+import { useForm } from "react-hook-form";
+type RegistrationFormValues = {
+    name: string;
+    relationship: string;
+    phone?: string;
+    quantity: string;
+};
 
 interface ScheduleItem {
     time: string;
@@ -952,33 +957,27 @@ function ScheduleView({onShowMap}: { onShowMap: () => void }) {
 
 function RegistrationView({onSeeSchedule}: { onSeeSchedule: () => void }) {
     const [submitStatus, setSubmitStatus] = useState<null | "success" | "error">(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setIsSubmitting(true);
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<RegistrationFormValues>();
 
-        const form = e.currentTarget;
-        const formData = new FormData(form);
-
+    const onSubmit = async (data: RegistrationFormValues) => {
         const response = await fetch("https://formspree.io/f/mojrkjgv", {
             method: "POST",
-            body: formData,
+            body: JSON.stringify(data),
             headers: {
                 Accept: "application/json",
+                "Content-Type": "application/json",
             },
         });
 
-        setIsSubmitting(false);
-
         if (response.ok) {
-            form.reset();
+            reset();
             setSubmitStatus("success");
-
-            confetti({
-                particleCount: 140,
-                spread: 90,
-                origin: { y: 0.65 },
-            });
+            confetti({ particleCount: 140, spread: 90, origin: { y: 0.65 } });
         } else {
             setSubmitStatus("error");
         }
@@ -1083,29 +1082,44 @@ function RegistrationView({onSeeSchedule}: { onSeeSchedule: () => void }) {
                             <p className="text-white/70">Để lại tên để mình tiện sắp xếp đón tiếp nhé!</p>
                         </div>
 
-                        <form className="p-10 space-y-8" onSubmit={handleSubmit}>
+                        <form className="p-10 space-y-8" onSubmit={handleSubmit(onSubmit)}>
                             <div className="grid md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-zinc-700 font-display">Tên Của Bạn
                                         *</label>
                                     <input
+                                        {...register("name", {
+                                            required: "Bạn nhập tên giúp Khiêm nhé",
+                                            minLength: {
+                                                value: 2,
+                                                message: "Tên tối thiểu 2 ký tự",
+                                            },
+                                        })}
                                         type="text"
-                                        name="name"
                                         placeholder="Ví dụ: Anh Tuấn / Chị Lan"
                                         className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-hust-red focus:ring-1 focus:ring-hust-red outline-none transition-all font-display"
                                     />
+                                    {errors.name && (
+                                        <p className="text-sm text-hust-red">{errors.name.message}</p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-zinc-700 font-display">Bạn Là...? *</label>
                                     <select
-                                        name="relationship"
+                                        {...register("relationship", {
+                                            required: "Bạn chọn mối quan hệ nhé",
+                                        })}
+                                        defaultValue=""
                                         className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-hust-red focus:ring-1 focus:ring-hust-red outline-none transition-all font-display cursor-pointer appearance-none text-zinc-500">
-                                        <option>Chọn mối quan hệ...</option>
+                                        <option value="" disabled>Chọn mối quan hệ...</option>
                                         <option>Bạn bè HUST</option>
                                         <option>Bạn bè ngoài trường</option>
                                         <option>Người thân / Gia đình</option>
                                         <option>Khác</option>
                                     </select>
+                                    {errors.relationship && (
+                                        <p className="text-sm text-hust-red">{errors.relationship.message}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -1115,10 +1129,18 @@ function RegistrationView({onSeeSchedule}: { onSeeSchedule: () => void }) {
                                         mình gọi khi bạn đến)</label>
                                     <input
                                         type="tel"
-                                        name="phone"
+                                        {...register("phone", {
+                                            pattern: {
+                                                value: /^(0|\+84)(\d{9})$/,
+                                                message: "Số điện thoại chưa đúng định dạng",
+                                            },
+                                        })}
                                         placeholder="09xx..."
                                         className="w-full px-5 py-3.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-hust-red focus:ring-1 focus:ring-hust-red outline-none transition-all font-display"
                                     />
+                                    {errors.phone && (
+                                        <p className="text-sm text-hust-red">{errors.phone.message}</p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-zinc-700 font-display">Số Người Đi
