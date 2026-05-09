@@ -40,7 +40,11 @@ type RegistrationFormValues = {
     phone?: string;
     quantity: string;
 };
-
+type ContactFormValues = {
+    name: string;
+    phone?: string;
+    message: string;
+};
 interface ScheduleItem {
     time: string;
     period: string;
@@ -554,28 +558,36 @@ function PrivacyView() {
 
 function ContactView() {
     const [submitStatus, setSubmitStatus] = useState<null | "success" | "error">(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        setIsSubmitting(true);
-
-        const form = e.currentTarget;
-        const formData = new FormData(form);
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<ContactFormValues>({
+        defaultValues: {
+            name: "",
+            phone: "",
+            message: "",
+        },
+    });
+    const onSubmit = async (data: ContactFormValues) => {
+        const cleanedData = {
+            name: data.name.trim(),
+            phone: data.phone?.trim() || "",
+            message: data.message.trim(),
+        };
 
         const response = await fetch("https://formspree.io/f/mojrkjgv", {
             method: "POST",
-            body: formData,
+            body: JSON.stringify(cleanedData),
             headers: {
                 Accept: "application/json",
+                "Content-Type": "application/json",
             },
         });
 
-        setIsSubmitting(false);
-
         if (response.ok) {
-            form.reset();
-
+            reset();
             setSubmitStatus("success");
 
             confetti({
@@ -611,25 +623,61 @@ function ContactView() {
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-hust-red"></div>
                     <h2 className="text-2xl font-display font-bold text-zinc-900 mb-8">Nhắn Nhủ Cho Khiêm</h2>
 
-                    <form className="space-y-6" onSubmit={handleSubmit}>
+                    <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-zinc-700 font-display">Tên Của Bạn</label>
                                 <input
+                                    {...register("name", {
+                                        validate: (value) =>
+                                            value.trim().length > 0 || "Bạn nhập tên giúp Khiêm nhé",
+                                        minLength: {
+                                            value: 2,
+                                            message: "Tên tối thiểu 2 ký tự",
+                                        },
+                                    })}
                                     type="text"
-                                    name="name"
                                     placeholder="Nhập tên"
-                                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-hust-red focus:ring-1 focus:ring-hust-red outline-none transition-all font-display"
+                                    className={`w-full px-4 py-3 bg-zinc-50 border rounded-xl focus:ring-1 outline-none transition-all font-display ${
+                                        errors.name
+                                            ? "border-hust-red focus:border-hust-red focus:ring-hust-red"
+                                            : "border-zinc-200 focus:border-hust-red focus:ring-hust-red"
+                                    }`}
                                 />
+                                {errors.name && (
+                                    <p className="text-sm text-hust-red font-display">
+                                        {errors.name.message}
+                                    </p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-zinc-700 font-display">Số Điện Thoại</label>
                                 <input
+                                    {...register("phone", {
+                                        validate: (value) => {
+                                            const phone = value?.trim();
+
+                                            if (!phone) return true;
+
+                                            return (
+                                                /^(0|\+84)\d{9}$/.test(phone.replace(/\s/g, "")) ||
+                                                "Số điện thoại chưa đúng định dạng"
+                                            );
+                                        },
+                                    })}
                                     type="tel"
-                                    name="phone"
                                     placeholder="09xx..."
-                                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-hust-red focus:ring-1 focus:ring-hust-red outline-none transition-all font-display"
+                                    className={`w-full px-4 py-3 bg-zinc-50 border rounded-xl focus:ring-1 outline-none transition-all font-display ${
+                                        errors.phone
+                                            ? "border-hust-red focus:border-hust-red focus:ring-hust-red"
+                                            : "border-zinc-200 focus:border-hust-red focus:ring-hust-red"
+                                    }`}
                                 />
+                                {errors.phone && (
+                                    <p className="text-sm text-hust-red font-display">
+                                        {errors.phone.message}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
@@ -638,9 +686,29 @@ function ContactView() {
                             <textarea
                                 placeholder="Viết lời chúc hoặc lời nhắn cho mình tại đây nhé..."
                                 rows={5}
-                                name="message"
-                                className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:border-hust-red focus:ring-1 focus:ring-hust-red outline-none transition-all font-display resize-none"
+                                {...register("message", {
+                                    validate: (value) =>
+                                        value.trim().length > 0 || "Bạn viết vài lời cho Khiêm nhé ❤️",
+                                    minLength: {
+                                        value: 10,
+                                        message: "Lời nhắn hơi ngắn nha 😄",
+                                    },
+                                    maxLength: {
+                                        value: 500,
+                                        message: "Lời nhắn tối đa 500 ký tự thôi nhé",
+                                    },
+                                })}
+                                className={`w-full px-4 py-3 bg-zinc-50 border rounded-xl focus:ring-1 outline-none transition-all font-display resize-none ${
+                                    errors.message
+                                        ? "border-hust-red focus:border-hust-red focus:ring-hust-red"
+                                        : "border-zinc-200 focus:border-hust-red focus:ring-hust-red"
+                                }`}
                             />
+                            {errors.message && (
+                                <p className="text-sm text-hust-red font-display">
+                                    {errors.message.message}
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex justify-end pt-4">
