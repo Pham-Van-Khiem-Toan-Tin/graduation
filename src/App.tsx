@@ -491,7 +491,7 @@ function PrivacyView() {
     return (
         <main className="pt-32 pb-24 px-6 max-w-[800px] mx-auto">
             <div className="mb-12">
-                <h1 className="text-4xl font-display font-bold text-zinc-900 mb-4">Chính Sách Bảo Mật</h1>
+                <h1 className="text-4xl font-display font-bold text-zinc-900 mb-4">Chính Sách Bảo Mật của trang web</h1>
                 <p className="text-zinc-400 font-display">Cập nhật lần cuối: 15/04/2026</p>
             </div>
 
