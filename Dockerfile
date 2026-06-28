@@ -9,7 +9,7 @@ RUN npm run build
 # Stage 2: Dùng Nginx để serve các file tĩnh đó
 FROM nginx:alpine
 # Copy sản phẩm đã build từ Stage 1 vào thư mục mặc định của Nginx
-COPY --from=build /app/build /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html
 # Mở port 80 của Nginx
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
